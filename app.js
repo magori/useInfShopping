@@ -1,13 +1,11 @@
 const express = require('express');
 const apiCdiscount = require('./apiCdiscount');
 const {WebhookClient} = require('dialogflow-fulfillment');
-//const express = require('express');
 const bodyParser = require('body-parser');
 
 const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
-
 
 function WebhookProcessing(request, response) {
     const agent = new WebhookClient({request, response});
@@ -21,7 +19,7 @@ function WebhookProcessing(request, response) {
     function commande(agent) {
         return apiCdiscount.searchProducts("tablette").then((body) => {
             console.log(body);
-            agent.add(`Nous allons commander ${message} vous les vous le payer maitenant 99?`)
+            agent.add(`Nous allons commander ?`)
         });
     }
 
