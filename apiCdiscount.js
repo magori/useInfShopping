@@ -5,6 +5,7 @@ const URL = "https://api.cdiscount.com/OpenApi/json";
 
 apiCdiscount = {
     searchProducts: function (keyword, brands) {
+        console.log("keyword : "+keyword+" ; brands : "+ brands);
         let options = {
             uri: `${URL}/Search`,
             method: 'POST',
@@ -26,7 +27,7 @@ apiCdiscount = {
                             "Min": 0,
                             "Max": 0
                         },
-                        "Navigation": "computers",
+                        "Navigation": null,
                         "IncludeMarketPlace": false,
                         "Brands": brands,
                         "Condition": null

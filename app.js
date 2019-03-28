@@ -13,14 +13,29 @@ function WebhookProcessing(request, response) {
     console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
 
     function welcome(agent) {
-        agent.add(`Welcome to my agent!`);
+        agent.add(`Bienvenu to Florian and Dorian my agent!`);
     }
 
-    function commande(agent) {
-        return apiCdiscount.searchProducts("tablette").then((body) => {
-            console.log(body);
-            agent.add(`Nous allons commander ?`)
-        });
+    function Search(agent) {
+        const product = agent.parameters['Product_type'];
+        const brand = agent.parameters['Marque'];
+        console.log("product : "+product+" ; brand : "+brand);
+        if(product && brand){
+            console.log("launch request with brand");
+            return apiCdiscount.searchProducts(product,brand).then((body) => {
+                console.log(body);
+                agent.add(`Nous allons commander ?`)
+            });
+        }
+        else if (product){
+            console.log("launch request with product");
+            return apiCdiscount.searchProducts(product).then((body) => {
+                console.log(body);
+                agent.add(`Nous allons commander ?`)
+            });
+        }
+
+
     }
 
     function fallback(agent) {
@@ -33,7 +48,7 @@ function WebhookProcessing(request, response) {
 
     intentMap.set('Default Welcome Intent', welcome);
     intentMap.set('Default Fallback Intent', fallback);
-    intentMap.set('Commande', commande);
+    intentMap.set('recherche de produit', Search);
     agent.handleRequest(intentMap);
 }
 
