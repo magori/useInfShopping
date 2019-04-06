@@ -1,6 +1,7 @@
 const express = require('express');
 const apiCdiscount = require('./apiCdiscount');
-const {WebhookClient} = require('dialogflow-fulfillment');
+const {WebhookClient, Card, Suggestion} = require('dialogflow-fulfillment');
+
 const bodyParser = require('body-parser');
 
 const app = express();
@@ -13,42 +14,119 @@ function WebhookProcessing(request, response) {
     console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
 
     function welcome(agent) {
-        agent.add(`Bienvenu to Florian and Dorian my agent!`);
+        agent.add(`Bienvenu to Florian and Dorian my agent! Il est possible de changer l'ordre d'affiche en demandant: Order par prix min, prix max ou évaluation`);
+    }
+
+    function searchProductsToDisplay(agent, product, brand, pageNumber, order) {
+        return apiCdiscount.searchProducts(product, brand, pageNumber, order).then((body) => {
+            if (body.Products) {
+                agent.add(`Voici les produits que nous avons trouvé`)
+                agent.add(`Vous pouvez définir un budget pour trouver votre produit, il sufit de demander: Mon budger est entre 1000 et 1200, par exemple`);
+                if (!brand) {
+                    agent.add(`Vous n'avez pas sépcifier de marque dans votre recherche. Si vous voulez etre plus précis merci de préciser la marque`)
+                }
+                body.Products.forEach(product => {
+                    agent.add(new Card({
+                        title: product.Name,
+                        imageUrl: product.MainImageUrl,
+                        text: "Prix: " + product.BestOffer.SalePrice,
+                        buttonText: 'Voir sur le site',
+                        buttonUrl: 'https://www.cdiscount.com/mp-1-' + product.Id + '.html'
+                    }));
+                });
+                agent.add(`Les 5 premiers produits sont affichés. Voulez-vous en afficher d'autres ? `);
+                agent.add(new Suggestion(`Oui`));
+                agent.setContext({
+                    name: 'produit',
+                    lifespan: 2,
+                    parameters: {product: product, brand: brand, pageNumber: pageNumber + 1, order: order}
+                });
+            } else {
+                agent.add(`Aucun produit n'a été trouvé _- !`);
+            }
+        });
     }
 
     function Search(agent) {
         const product = agent.parameters['Product_type'];
-        const brand = agent.parameters['Marque'];
-        console.log("product : "+product+" ; brand : "+brand);
-        if(product && brand){
+        let brand = agent.parameters['Marque'];
+        let pageNumber = 0;
+        if (agent.getContext("produit")) {
+            pageNumber = agent.getContext("produit").parameters.pageNumber;
+        }
+        if (product && brand) {
             console.log("launch request with brand");
-            return apiCdiscount.searchProducts(product,brand).then((body) => {
-                console.log(body);
-                agent.add(`Nous allons commander ?`)
-            });
-        }
-        else if (product){
+        } else if (product) {
+            brand = "";
             console.log("launch request with product");
-            return apiCdiscount.searchProducts(product).then((body) => {
-                console.log(body);
-                agent.add(`Nous allons commander ?`)
-            });
         }
+        return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent))
+    }
 
+    function searchOrder(agent) {
+        let order = agent.parameters['Ordre'];
+        agent.setContext({
+            name: 'produit_order',
+            lifespan: 10000,
+            parameters: {order: order}
+        });
 
+        const contextProduit = agent.getContext("produit");
+        if (contextProduit) {
+            const pageNumber = contextProduit.parameters.pageNumber;
+            const product = contextProduit.parameters.product;
+            const brand = contextProduit.parameters.brand;
+            return searchProductsToDisplay(agent, product, brand, pageNumber, order)
+        }
+        fallback(agent);
+    }
+
+    function searchNextProduct(agent) {
+        const contextProduit = agent.getContext("produit");
+        if (contextProduit) {
+            const pageNumber = contextProduit.parameters.pageNumber;
+            const product = contextProduit.parameters.product;
+            const brand = contextProduit.parameters.brand;
+            return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent));
+        }
+        fallback(agent)
+    }
+
+    function searchByBudget(agent) {
+        let budgetMin = agent.parameters['number'];
+        let budgetMax = agent.parameters['number1'];
+        console.log(budgetMax, budgetMin);
+        const contextProduit = agent.getContext("produit");
+        if (contextProduit) {
+            const pageNumber = contextProduit.parameters.pageNumber;
+            const product = contextProduit.parameters.product;
+            const brand = contextProduit.parameters.brand;
+            return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent));
+        }
+        fallback(agent)
+    }
+
+    function resolveOrder(agent) {
+        const produitOrderContext = agent.getContext("produit_order");
+        let order;
+        if (produitOrderContext) {
+            order = produitOrderContext.parameters.order;
+        }
+        return order;
     }
 
     function fallback(agent) {
-        return apiCdiscount.searchProducts("tablette").then(body => {
-            console.log(body);
-            agent.add(`I didn't understand3333`);
-        });
+        agent.add(`Je n'ai pas compris !`);
     }
+
     let intentMap = new Map();
 
     intentMap.set('Default Welcome Intent', welcome);
     intentMap.set('Default Fallback Intent', fallback);
     intentMap.set('recherche de produit', Search);
+    intentMap.set("OrdrerProduit", searchOrder);
+    intentMap.set('OuiNon', searchNextProduct);
+    intentMap.set("Budget", searchByBudget)
     agent.handleRequest(intentMap);
 }
 

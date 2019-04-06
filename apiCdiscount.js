@@ -4,8 +4,14 @@ const apiKey = "d44819fb-17f0-4f32-9d6e-6625388e10e4";
 const URL = "https://api.cdiscount.com/OpenApi/json";
 
 apiCdiscount = {
-    searchProducts: function (keyword, brands) {
-        console.log("keyword : "+keyword+" ; brands : "+ brands);
+    searchProducts: function (keyword, brands, pageNumber, order) {
+        if (!brands) {
+            brands = undefined;
+        }
+        if (!order) {
+            order = "relevance";
+        }
+        console.log("keyword : " + keyword + " ; brands : " + brands + " ; pageNumber : " + pageNumber + " ; order :" + order);
         let options = {
             uri: `${URL}/Search`,
             method: 'POST',
@@ -17,10 +23,10 @@ apiCdiscount = {
                 "ApiKey": apiKey,
                 "SearchRequest": {
                     "Keyword": keyword,
-                    "SortBy": "relevance",
+                    "SortBy": order,
                     "Pagination": {
                         "ItemsPerPage": 5,
-                        "PageNumber": 0
+                        "PageNumber": pageNumber
                     },
                     "Filters": {
                         "Price": {
