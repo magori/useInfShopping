@@ -4,14 +4,21 @@ const apiKey = "d44819fb-17f0-4f32-9d6e-6625388e10e4";
 const URL = "https://api.cdiscount.com/OpenApi/json";
 
 apiCdiscount = {
-    searchProducts: function (keyword, brands, pageNumber, order) {
+    searchProducts: function (keyword, brands, pageNumber, order, budgetMin, budgetMax) {
         if (!brands) {
             brands = undefined;
+        }
+        if (!budgetMin) {
+            budgetMin = 0;
+        }
+        if (!budgetMax) {
+            budgetMax = 0;
         }
         if (!order) {
             order = "relevance";
         }
-        console.log("keyword : " + keyword + " ; brands : " + brands + " ; pageNumber : " + pageNumber + " ; order :" + order);
+        console.log("keyword : " + keyword + " ; brands : " + brands + " ; pageNumber : " + pageNumber +
+            " ; order :" + order + "; budgetMin :" + budgetMin + "; budgetMax :" + budgetMax);
         let options = {
             uri: `${URL}/Search`,
             method: 'POST',
@@ -30,8 +37,8 @@ apiCdiscount = {
                     },
                     "Filters": {
                         "Price": {
-                            "Min": 0,
-                            "Max": 0
+                            "Min": budgetMin,
+                            "Max": budgetMax
                         },
                         "Navigation": null,
                         "IncludeMarketPlace": false,

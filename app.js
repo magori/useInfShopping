@@ -17,14 +17,22 @@ function WebhookProcessing(request, response) {
         agent.add(`Bienvenu to Florian and Dorian my agent! Il est possible de changer l'ordre d'affiche en demandant: Order par prix min, prix max ou évaluation`);
     }
 
-    function searchProductsToDisplay(agent, product, brand, pageNumber, order) {
-        return apiCdiscount.searchProducts(product, brand, pageNumber, order).then((body) => {
+    function searchProductsToDisplay(agent, product, brand, pageNumber, order, budgetMin, budgetMax) {
+        return apiCdiscount.searchProducts(product, brand, pageNumber, order, budgetMin, budgetMax).then((body) => {
             if (body.Products) {
-                agent.add(`Voici les produits que nous avons trouvé`)
-                agent.add(`Vous pouvez définir un budget pour trouver votre produit, il sufit de demander: Mon budger est entre 1000 et 1200, par exemple`);
+                let message = " Voici les produits que nous avons trouvé pour "+product;
                 if (!brand) {
-                    agent.add(`Vous n'avez pas sépcifier de marque dans votre recherche. Si vous voulez etre plus précis merci de préciser la marque`)
+                    agent.add(`Vous n'avez pas sépcifier de marque dans votre recherche. Si vous voulez être plus précis merci de préciser la marque`)
+                } else {
+                    message = message + " de marque " + brand;
                 }
+                if (!budgetMax) {
+                    agent.add(`Vous pouvez définir un budget pour trouver votre produit, il sufit de demander: Mon budget est de 1200, par exemple`);
+                } else {
+                    message = message + " avec un budget max de " + budgetMax
+                }
+                agent.add(message);
+
                 body.Products.forEach(product => {
                     agent.add(new Card({
                         title: product.Name,
@@ -39,10 +47,17 @@ function WebhookProcessing(request, response) {
                 agent.setContext({
                     name: 'produit',
                     lifespan: 2,
-                    parameters: {product: product, brand: brand, pageNumber: pageNumber + 1, order: order}
+                    parameters: {
+                        product: product,
+                        brand: brand,
+                        pageNumber: pageNumber + 1,
+                        order: order,
+                        budgetMin: budgetMin,
+                        budgetMax: budgetMax
+                    }
                 });
             } else {
-                agent.add(`Aucun produit n'a été trouvé _- !`);
+                agent.add(`Aucun produit n'a été trouvé !`);
             }
         });
     }
@@ -76,7 +91,9 @@ function WebhookProcessing(request, response) {
             const pageNumber = contextProduit.parameters.pageNumber;
             const product = contextProduit.parameters.product;
             const brand = contextProduit.parameters.brand;
-            return searchProductsToDisplay(agent, product, brand, pageNumber, order)
+            const budgetMin = contextProduit.parameters.budgetMin;
+            const budgetMax = contextProduit.parameters.budgetMax;
+            return searchProductsToDisplay(agent, product, brand, pageNumber, order, budgetMin, budgetMax)
         }
         fallback(agent);
     }
@@ -87,7 +104,9 @@ function WebhookProcessing(request, response) {
             const pageNumber = contextProduit.parameters.pageNumber;
             const product = contextProduit.parameters.product;
             const brand = contextProduit.parameters.brand;
-            return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent));
+            const budgetMin = contextProduit.parameters.budgetMin;
+            const budgetMax = contextProduit.parameters.budgetMax;
+            return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent), budgetMin, budgetMax);
         }
         fallback(agent)
     }
@@ -95,13 +114,16 @@ function WebhookProcessing(request, response) {
     function searchByBudget(agent) {
         let budgetMin = agent.parameters['number'];
         let budgetMax = agent.parameters['number1'];
-        console.log(budgetMax, budgetMin);
+        if (!budgetMax) {
+            budgetMax = budgetMin;
+            budgetMin = 0;
+        }
         const contextProduit = agent.getContext("produit");
         if (contextProduit) {
             const pageNumber = contextProduit.parameters.pageNumber;
             const product = contextProduit.parameters.product;
             const brand = contextProduit.parameters.brand;
-            return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent));
+            return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent), budgetMin, budgetMax);
         }
         fallback(agent)
     }
