@@ -33,8 +33,9 @@ function WebhookProcessing(request, response) {
                 }
                 agent.add(message);
 
+                var liste_Card = [];
                 body.Products.forEach(product => {
-                    agent.add(new Card({
+                    liste_Card.push(new Card({
                         title: product.Name,
                         imageUrl: product.MainImageUrl,
                         text: "Prix: " + product.BestOffer.SalePrice,
@@ -42,6 +43,8 @@ function WebhookProcessing(request, response) {
                         buttonUrl: 'https://www.cdiscount.com/mp-1-' + product.Id + '.html'
                     }));
                 });
+                console.log(liste_Card);
+                agent.add(liste_Card);
                 agent.add(`Les 5 premiers produits sont affichés. Voulez-vous en afficher d'autres ? `);
                 agent.add(new Suggestion(`Oui`));
                 agent.add(new Suggestion(`Non`));
