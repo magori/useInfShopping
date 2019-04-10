@@ -45,6 +45,7 @@ function WebhookProcessing(request, response) {
                 });
                 agent.add(`Les 5 premiers produits sont affichés. Voulez-vous en afficher d'autres ? `);
                 agent.add(new Suggestion(`Oui`));
+                agent.add(new Suggestion(`Non`));
                 agent.setContext({
                     name: 'produit',
                     lifespan: 2,
@@ -96,20 +97,23 @@ function WebhookProcessing(request, response) {
             const budgetMax = contextProduit.parameters.budgetMax;
             return searchProductsToDisplay(agent, product, brand, pageNumber, order, budgetMin, budgetMax)
         }
-        fallback(agent);
+        //fallback(agent);
     }
 
     function searchNextProduct(agent) {
         const contextProduit = agent.getContext("produit");
-        if (contextProduit) {
-            const pageNumber = contextProduit.parameters.pageNumber;
-            const product = contextProduit.parameters.product;
-            const brand = contextProduit.parameters.brand;
-            const budgetMin = contextProduit.parameters.budgetMin;
-            const budgetMax = contextProduit.parameters.budgetMax;
-            return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent), budgetMin, budgetMax);
+        let answer = agent.parameters['OuiNon'];
+        if(answer == 'Oui'){
+            if (contextProduit) {
+                const pageNumber = contextProduit.parameters.pageNumber;
+                const product = contextProduit.parameters.product;
+                const brand = contextProduit.parameters.brand;
+                const budgetMin = contextProduit.parameters.budgetMin;
+                const budgetMax = contextProduit.parameters.budgetMax;
+                return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent), budgetMin, budgetMax);
+            }
         }
-        fallback(agent)
+        //fallback(agent)
     }
 
     function searchByBudget(agent) {
@@ -126,7 +130,7 @@ function WebhookProcessing(request, response) {
             const brand = contextProduit.parameters.brand;
             return searchProductsToDisplay(agent, product, brand, pageNumber, resolveOrder(agent), budgetMin, budgetMax);
         }
-        fallback(agent)
+        //fallback(agent)
     }
 
     function resolveOrder(agent) {
@@ -144,8 +148,8 @@ function WebhookProcessing(request, response) {
 
     let intentMap = new Map();
 
-    intentMap.set('Default Welcome Intent', welcome);
-    intentMap.set('Default Fallback Intent', fallback);
+    //intentMap.set('Default Welcome Intent', welcome);
+    //intentMap.set('Default Fallback Intent', fallback);
     intentMap.set('recherche de produit', Search);
     intentMap.set("OrdrerProduit", searchOrder);
     intentMap.set('OuiNon', searchNextProduct);
