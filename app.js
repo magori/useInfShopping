@@ -14,7 +14,8 @@ function WebhookProcessing(request, response) {
     console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
 
     function welcome(agent) {
-        agent.add(`Bienvenu to Florian and Dorian my agent! Il est possible de changer l'ordre d'affiche en demandant: Order par prix min, prix max ou évaluation`);
+        agent.add(`Bienvenue to Florian and Dorian my agent! Il est possible de changer l'ordre d'affichage en demandant: 
+        Order par prix min, prix max ou évaluation`);
     }
 
     function searchProductsToDisplay(agent, product, brand, pageNumber, order, budgetMin, budgetMax) {
@@ -22,7 +23,7 @@ function WebhookProcessing(request, response) {
             if (body.Products) {
                 let message = " Voici les produits que nous avons trouvé pour "+product;
                 if (!brand) {
-                    agent.add(`Vous n'avez pas sépcifier de marque dans votre recherche. Si vous voulez être plus précis merci de préciser la marque`)
+                    agent.add(`Vous n'avez pas sépcifié la marque dans votre recherche. Si vous voulez être plus précis merci de l'indiquer`)
                 } else {
                     message = message + " de marque " + brand;
                 }
